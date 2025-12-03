@@ -51,7 +51,7 @@ func evaluatePart2(bank string) int {
 	for digitChar := range strings.SplitSeq(bank, "") {
 		digits = append(digits, strToInt(digitChar))
 	}
-	fmt.Printf("New eval: %s\n", bank)
+	// fmt.Printf("New eval: %s\n", bank)
 
 	accum := []int{}
 	startIdx := 0
@@ -62,33 +62,33 @@ func evaluatePart2(bank string) int {
 		digit, startIdx = search(digits, startIdx, stopIdx)
 
 		accum = append(accum, digit)
-		fmt.Printf("append %d\n", digit)
+		// fmt.Printf("append %d\n", digit)
 	}
-	fmt.Printf("  Accumulator: %v\n", accum)
+	// fmt.Printf("  Accumulator: %v\n", accum)
 
 	reverse(&accum) // need "least significant decimal" order
-	fmt.Printf("Reversed: %v\n", accum)
+	// fmt.Printf("Reversed: %v\n", accum)
 	for i, n := range accum {
 		sum := n * int(math.Pow(10, float64(i)))
-		fmt.Printf("sum: %d,", sum)
+		// fmt.Printf("sum: %d,", sum)
 		outputSum += sum
-		fmt.Printf("outputSum: %d\n", outputSum)
+		// fmt.Printf("outputSum: %d\n", outputSum)
 	}
 	return outputSum
 }
 
-func search(digits []int, startIdx int, stopIdx int) (bigDigit int, bigIdx int) {
-	fmt.Printf("    start=%d, stop=%d | ", startIdx, stopIdx)
-	bigDigit = 0
-	bigIdx = startIdx
+func search(digits []int, startIdx int, stopIdx int) (digit int, idx int) {
+	// fmt.Printf("    start=%d, stop=%d | ", startIdx, stopIdx)
+	digit = 0
+	idx = startIdx
 	for i := startIdx; i < stopIdx; i++ {
-		if digits[i] > bigDigit {
-			bigDigit = digits[i]
-			bigIdx = i + 1
+		if digits[i] > digit {
+			digit = digits[i]
+			idx = i + 1
 		}
 	}
-	fmt.Printf("(%d) i=%d | ", bigDigit, bigIdx)
-	return bigDigit, bigIdx
+	// fmt.Printf("(%d) i=%d | ", digit, idx)
+	return digit, idx
 }
 
 func reverse(arr *[]int) {
@@ -106,9 +106,12 @@ func main() {
 	body := string(bytes)
 	lines := strings.Split(body, "\n")
 
-	sum := 0
+	sum1 := 0
+	sum2 := 0
 	for _, bank := range lines {
-		sum += evaluatePart2(bank)
+		sum1 += evaluatePart1(bank)
+		sum2 += evaluatePart2(bank)
 	}
-	fmt.Println(sum)
+	fmt.Println(">>> Part 1:", sum1)
+	fmt.Println(">>> Part 2:", sum2)
 }
