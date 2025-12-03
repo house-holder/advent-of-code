@@ -45,6 +45,7 @@ func evaluatePart1(line string) int {
 }
 
 func evaluatePart2(bank string) int {
+	// if resultSize is set, works perfectly for part 1
 	resultSize := 12
 	outputSum := 0
 	digits := []int{}
@@ -66,13 +67,19 @@ func evaluatePart2(bank string) int {
 	}
 	// fmt.Printf("  Accumulator: %v\n", accum)
 
-	reverse(&accum) // need "least significant decimal" order
+	// reverse(&accum) // need "least significant decimal" order
 	// fmt.Printf("Reversed: %v\n", accum)
+	// for i, n := range accum {
+	// 	sum := n * int(math.Pow(10, float64(i)))
+	// 	fmt.Printf("sum: %d,", sum)
+	// 	outputSum += sum
+	// 	fmt.Printf("outputSum: %d\n", outputSum)
+	// }
+
 	for i, n := range accum {
-		sum := n * int(math.Pow(10, float64(i)))
-		// fmt.Printf("sum: %d,", sum)
+		power := len(accum) - i - 1
+		sum := n * int(math.Pow(10, float64(power)))
 		outputSum += sum
-		// fmt.Printf("outputSum: %d\n", outputSum)
 	}
 	return outputSum
 }
@@ -91,11 +98,11 @@ func search(digits []int, startIdx int, stopIdx int) (digit int, idx int) {
 	return digit, idx
 }
 
-func reverse(arr *[]int) {
-	for i, j := 0, len(*arr)-1; i < j; i, j = i+1, j-1 {
-		(*arr)[i], (*arr)[j] = (*arr)[j], (*arr)[i]
-	}
-}
+// func reverse(arr *[]int) {
+// 	for i, j := 0, len(*arr)-1; i < j; i, j = i+1, j-1 {
+// 		(*arr)[i], (*arr)[j] = (*arr)[j], (*arr)[i]
+// 	}
+// }
 
 func main() {
 	bytes, err := os.ReadFile(os.Args[1])
