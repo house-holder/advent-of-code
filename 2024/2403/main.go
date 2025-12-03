@@ -21,11 +21,17 @@ func collect(data string) [][]int {
 	tokens := mulRegex.FindAllString(data, -1)
 
 	for _, token := range tokens {
+		if offRegex.MatchString(token) {
+			enabled = false
+		} else if onRegex.MatchString(token) {
+			enabled = true
+		}
 		if enabled {
 			trimmed := strings.Trim(token, "mul()")
 			parts := strings.Split(trimmed, ",")
 			num1, _ := strconv.Atoi(parts[0])
 			num2, _ := strconv.Atoi(parts[1])
+
 			output = append(output, []int{num1, num2})
 		}
 	}
