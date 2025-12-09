@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-const (
+const ( // NOTE: just for colorizing debug output
 	BLK = "\033[30m"
 	RED = "\033[31m"
 	GRN = "\033[32m"
@@ -159,11 +159,15 @@ func getCircuitSizes(input []*Circuit) []int {
 }
 
 func connect(input [2]*Box) {
-	if slices.Contains(input[0].circuit.connections, input[1]) ||
-		slices.Contains(input[1].circuit.connections, input[0]) {
-		fmt.Println(">>>>>>SKIP CASE<<<<<<") // NOTE: or perhaps not?
+	if slices.Contains(input[0].circuit.connections, input[1]) {
+		fmt.Printf("%sSKIP CASE: %s.connections contains %s%s\n",
+			RED, input[0].name, input[1].name, NC)
 		return
-
+	}
+	if slices.Contains(input[1].circuit.connections, input[0]) {
+		fmt.Printf("%sSKIP CASE: %s.connections contains %s%s\n",
+			RED, input[1].name, input[0].name, NC)
+		return
 	}
 	cA := input[0].circuit
 	cB := input[1].circuit
@@ -181,7 +185,7 @@ func connect(input [2]*Box) {
 			cA.connections = append(cA.connections, box)
 			continue
 		}
-		fmt.Printf("%sOH NO OH MY GOD%s\n", RED, NC)
+		fmt.Printf("%sOH NO OH MY GOD HELP ME OH THE HORROR%s\n", RED, NC)
 	}
 
 	cB.connections = []*Box{}
@@ -220,7 +224,7 @@ func evalPart1(input string, filename string) int {
 	debugPrintCircuits(allCircuits)
 
 	slices.Sort(sizes)
-	fmt.Println(sizes)
+	fmt.Printf("\nSorted sizes: %s%v%s\n", GRN, sizes, NC)
 	for i := range 3 {
 		result *= sizes[(len(sizes)-1)-i]
 	}
