@@ -101,10 +101,29 @@ func printMap(
 		}
 	}
 	fmt.Printf("\n")
-	// fmt.Println(greens)
 }
 
-func buildGreens(reds []Coordinate) []Coordinate {
+func findLimits(input []Coordinate) ([2]int, [2]int) {
+	minX, maxX := input[0].X, input[0].X
+	minY, maxY := input[0].Y, input[0].Y
+	for _, coord := range input {
+		if coord.X < minX {
+			minX = coord.X
+		}
+		if coord.X > maxX {
+			maxX = coord.X
+		}
+		if coord.Y < minY {
+			minY = coord.Y
+		}
+		if coord.Y > maxY {
+			maxY = coord.Y
+		}
+	}
+	return [2]int{minX, maxX}, [2]int{minY, maxY}
+}
+
+func extractGreensFrom(reds []Coordinate) []Coordinate {
 	greens := []Coordinate{}
 	prev := Coordinate{}
 
@@ -112,30 +131,58 @@ func buildGreens(reds []Coordinate) []Coordinate {
 		if i > 0 {
 			prev = reds[i-1]
 			if curr.Y == prev.Y { // if same line
-				fmt.Printf("%d. curr=%d, currY=%d\n", i, curr.X, curr.Y)
-				fmt.Printf("   prevX=%d, prevY=%d\n", prev.X, prev.Y)
+				// fmt.Printf("%d. curr=%d, currY=%d\n", i, curr.X, curr.Y)
+				// fmt.Printf("   prevX=%d, prevY=%d\n", prev.X, prev.Y)
 				bigX := int(math.Max(float64(curr.X), float64(prev.X)))
 				litX := int(math.Min(float64(curr.X), float64(prev.X)))
 
 				for i := litX + 1; i < bigX; i++ {
 					greens = append(greens, Coordinate{i, curr.Y})
-					fmt.Printf("     append %d, %d\n", i, curr.Y)
+					// fmt.Printf("     append %d, %d\n", i, curr.Y)
 				}
-					} else {
-			continue
+			} else {
+				continue
+			}
 		}
 	}
 	return greens
 }
 
-func evalPart2(input []Coordinate, hiX int) int {
-	greens := buildGreens(input)
-	printMap(input, greens, hiX)
+func infill(
+	greens []Coordinate,
+	reds []Coordinate,
+	xLims [2]int,
+	yLims [2]int,
+) []Coordinate {
+	rows := [][]Coordinate{}
+	// build uniform-length rows encompassing color field
+	//
 
-	return len(input)
+	// for y := yLims[0]; y <= yLims[1]; y++ {
+	// 	for x := xLims[0]; x <= xLims[1]; x++ {
+	//            current := Coordinate{x, y}
+	// 		prevRedLine := reds[y-1]
+	// 		prevGreenLine := greens[y-1]
+	//            if (current.isWithin)
+	// 			greens = append(greens, current)
+	// 		}
+	// 	}
+	// }
+
+	return greens
+}
+
+func evalPart2(reds []Coordinate, hiX int) int {
+	xLims, yLims := findLimits(reds)
+	greens := extractGreensFrom(reds)
+	greens = infill(reds, greens, xLims, yLims)
+	printMap(reds, greens, hiX)
+
+	return len(greens)
 }
 
 // start 1765470289 stop 1765472304
+// start 1765479977 stop 1765483078
 func main() {
 	bytes, err := os.ReadFile(os.Args[1])
 	if err != nil {
@@ -144,10 +191,9 @@ func main() {
 	body := string(bytes)
 	coords, hiX := convertCoords(body)
 
-	fmt.Println()
-
 	result1 := evalPart1(coords)
 	result2 := evalPart2(coords, hiX)
+	fmt.Println()
 	fmt.Printf("Result 1: %d\n", result1)
 	fmt.Printf("Result 2: %d\n", result2)
 }
