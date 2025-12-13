@@ -12,11 +12,26 @@ import (
 
 var debug = true
 
+func Dbg(format string, a ...any) {
+	if debug {
+		fmt.Printf(format, a...)
+	}
+}
+
+func parseU16(c string, msg string) uint16 {
+	num, err := strconv.Atoi(c)
+	if err != nil {
+		log.Fatalf("%s failed. %v", msg, err)
+	}
+	return uint16(num)
+}
+
 type Machine struct {
-	voltages []uint16
-	buttons  []uint16
-	target   uint16
-	state    uint16
+	voltageTargets []uint16
+	voltages       []uint16
+	buttons        []uint16
+	stateTarget    uint16
+	state          uint16
 }
 
 func NewMachine(line string) Machine {
@@ -32,7 +47,6 @@ func NewMachine(line string) Machine {
 					tgtState |= 1 << i
 				}
 			}
-
 		case '(':
 			var newB uint16 = 0
 			tCmp := strings.Trim(cmp, "()")
@@ -41,7 +55,6 @@ func NewMachine(line string) Machine {
 				newB |= 1 << n
 			}
 			accB = append(accB, newB)
-
 		case '{':
 			tCmp := strings.Trim(cmp, "{}")
 			for c := range strings.SplitSeq(tCmp, ",") {
@@ -51,22 +64,20 @@ func NewMachine(line string) Machine {
 		}
 	}
 	return Machine{
-		voltages: accV,
-		buttons:  accB,
-		target:   tgtState,
-		state:    0,
+		voltageTargets: accV,
+		voltages:       make([]uint16, len(accV)),
+		buttons:        accB,
+		stateTarget:    tgtState,
+		state:          0,
 	}
 }
 
-func (m *Machine) operate() (minOps int, cycles int) {
+func (m *Machine) runState() (minOps int) {
 	k := len(m.buttons)
 	limit := 1 << k
-
 	minOps = math.MaxInt
-	cycles = 0
 
 	for subset := 1; subset < limit; subset++ {
-		cycles++
 		ops := bits.OnesCount(uint(subset))
 		if ops >= minOps {
 			continue
@@ -77,46 +88,31 @@ func (m *Machine) operate() (minOps int, cycles int) {
 				m.state ^= m.buttons[i]
 			}
 		}
-		if m.state == m.target {
+		if m.state == m.stateTarget {
 			minOps = ops
 		}
 	}
-	return minOps, cycles
+	return minOps
 }
 
-func Dbg(format string, a ...any) {
-	if debug {
-		fmt.Printf(format, a...)
-	}
-}
+// what the eff do i do for part 2
 
-func parseU16(c string, msg string) uint16 {
-	num, err := strconv.Atoi(c)
-	if err != nil {
-		log.Fatalf("%s failed. %v", msg, err)
-	}
-	return uint16(num)
-}
-
-func evalPart1(lines []string) int {
+func evalPart1(machines []*Machine) int {
 	operations := 0
-	machines := []Machine{}
 
-	for _, line := range lines {
-		if line != "" {
-			newM := NewMachine(line)
-			machines = append(machines, newM)
-		}
-	}
-
-	cycles := 0
 	for _, machine := range machines {
-		ops, cyc := machine.operate()
-		cycles += cyc
+		ops := machine.runState()
 		operations += ops
 	}
+	return operations
+}
 
-	Dbg("Total cycles: %d\n", cycles)
+func evalPart2(machines []*Machine) (operations int) {
+	operations = 0
+
+	for _, m := range machines {
+		operations += len(m.voltages)
+	}
 	return operations
 }
 
@@ -125,11 +121,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("os.ReadFile failed. %v", err)
 	}
-	body := string(bytes)
-	lines := strings.Split(body, "\n")
+	lines := strings.Split(string(bytes), "\n")
+	machines := []*Machine{}
+	for _, line := range lines {
+		if line != "" {
+			newM := NewMachine(line)
+			machines = append(machines, &newM)
+		}
+	}
 
-	result1 := evalPart1(lines)
-	// result2 := evalPart2(lines)
+	result1 := evalPart1(machines)
 	fmt.Println("Part 1:", result1)
-	// fmt.Println("Part 2:", result2)
+
+	result2 := evalPart2(machines)
+	fmt.Printf("Part 2: DUMMY VALUE %d\n", result2)
 }
