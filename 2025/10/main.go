@@ -10,14 +10,6 @@ import (
 	"strings"
 )
 
-var debug = true
-
-func Dbg(format string, a ...any) {
-	if debug {
-		fmt.Printf(format, a...)
-	}
-}
-
 func parseU16(c string, msg string) uint16 {
 	num, err := strconv.Atoi(c)
 	if err != nil {
@@ -26,12 +18,15 @@ func parseU16(c string, msg string) uint16 {
 	return uint16(num)
 }
 
+func idt(depth int) string {
+	return strings.Repeat("  ", depth)
+}
+
 type Machine struct {
-	voltageTargets []uint16
-	voltages       []uint16
-	buttons        []uint16
-	stateTarget    uint16
-	state          uint16
+	voltages []uint16
+	buttons  []uint16
+	stateTgt uint16
+	state    uint16
 }
 
 func NewMachine(line string) Machine {
@@ -64,56 +59,142 @@ func NewMachine(line string) Machine {
 		}
 	}
 	return Machine{
-		voltageTargets: accV,
-		voltages:       make([]uint16, len(accV)),
-		buttons:        accB,
-		stateTarget:    tgtState,
-		state:          0,
+		voltages: accV,
+		buttons:  accB,
+		stateTgt: tgtState,
+		state:    0,
 	}
 }
 
-func (m *Machine) runState() (minOps int) {
-	k := len(m.buttons)
-	limit := 1 << k
-	minOps = math.MaxInt
+func evalPart1(machines []*Machine) (operations int) {
+	operations = 0
+	for _, m := range machines {
+		minOps := math.MaxInt
+		k := len(m.buttons)
+		limit := 1 << k
 
-	for subset := 1; subset < limit; subset++ {
-		ops := bits.OnesCount(uint(subset))
-		if ops >= minOps {
-			continue
-		}
-		m.state = 0
-		for i := range k {
-			if subset&(1<<i) != 0 {
-				m.state ^= m.buttons[i]
+		for subset := 1; subset < limit; subset++ {
+			ops := bits.OnesCount(uint(subset))
+			if ops >= minOps {
+				continue
+			}
+			m.state = 0
+			for i := range k {
+				if subset&(1<<i) != 0 {
+					m.state ^= m.buttons[i]
+				}
+			}
+			if m.state == m.stateTgt {
+				minOps = ops
 			}
 		}
-		if m.state == m.stateTarget {
-			minOps = ops
-		}
-	}
-	return minOps
-}
-
-// what the eff do i do for part 2
-
-func evalPart1(machines []*Machine) int {
-	operations := 0
-
-	for _, machine := range machines {
-		ops := machine.runState()
-		operations += ops
+		operations += minOps
 	}
 	return operations
 }
 
 func evalPart2(machines []*Machine) (operations int) {
 	operations = 0
-
 	for _, m := range machines {
-		operations += len(m.voltages)
+		numBtns := len(m.buttons)
+		totalCombos := 1 << numBtns
+		numVTargets := len(m.voltages)
+		results := make(map[int][]uint16)
+		patterns := make(map[string][]int)
+
+		for combo := range totalCombos {
+			voltageVals := make([]uint16, numVTargets)
+
+			for bIdx := range numBtns {
+				if combo&(1<<bIdx) != 0 {
+					activeBtn := m.buttons[bIdx]
+
+					for cIdx := range numVTargets {
+						if activeBtn&(1<<cIdx) != 0 {
+							voltageVals[cIdx]++
+						}
+					}
+				}
+			}
+			parity := make([]uint16, numVTargets)
+			for i := range numVTargets {
+				parity[i] = voltageVals[i] % 2
+			}
+
+			parityKey := fmt.Sprint(parity)
+			patterns[parityKey] = append(patterns[parityKey], combo)
+			results[combo] = voltageVals
+		}
+
+		machineMinOps := m.execute(m.voltages, patterns, results, 0)
+		operations += machineMinOps
 	}
 	return operations
+}
+
+func (m *Machine) execute(
+	targets []uint16,
+	patterns map[string][]int,
+	results map[int][]uint16,
+	depth int,
+) (machineMinOps int) {
+	base := true
+	for _, v := range targets {
+		if v != 0 {
+			base = false
+			break
+		}
+	}
+	if base {
+		// fmt.Printf("%sBASE: tgts=%v → return 0\n", idt(depth), targets)
+		return 0
+	}
+
+	parity := make([]uint16, len(targets))
+	for i := range targets {
+		parity[i] = targets[i] % 2
+	}
+	parityKey := fmt.Sprint(parity)
+	matches := patterns[parityKey]
+	// fmt.Printf("%s>>> exec(targets=%v) parity=%s, %d matches\n",
+	// 	idt(depth), targets, parityKey, len(matches))
+
+	minOps := math.MaxInt
+	for _, combo := range matches {
+		diff := results[combo]
+		// fmt.Printf("%s  combo=%b, diff=%v\n", idt(depth), combo, diff)
+		valid := true
+		for i := range targets {
+			if diff[i] > targets[i] {
+				valid = false
+				break
+			}
+		}
+		if !valid {
+			continue
+		}
+
+		newTarget := make([]uint16, len(targets))
+		for i := range targets {
+			newTarget[i] = (targets[i] - diff[i]) / 2
+		}
+		// fmt.Printf("%s  newTarget = (targets - diff) / 2 = %v\n",
+		//  idt(depth), newTarget)
+		presses := bits.OnesCount(uint(combo))
+		subResult := m.execute(newTarget, patterns, results, depth+1)
+		// fmt.Printf("%s  !R: presses=%d, subR=%d, tot=%d+2*%d=%d\n",
+		// 	idt(depth), presses, subResult, presses, subResult, presses+2*subResult)
+
+		if subResult < math.MaxInt {
+			total := presses + 2*subResult
+			if total < minOps {
+				minOps = total
+			}
+		}
+	}
+	// fmt.Printf("%s<<< Return minOps=%d for targets=%v\n",
+	//  idt(depth), minOps, targets)
+	return minOps
 }
 
 func main() {
@@ -132,7 +213,6 @@ func main() {
 
 	result1 := evalPart1(machines)
 	fmt.Println("Part 1:", result1)
-
 	result2 := evalPart2(machines)
-	fmt.Printf("Part 2: DUMMY VALUE %d\n", result2)
+	fmt.Println("Part 2:", result2)
 }
