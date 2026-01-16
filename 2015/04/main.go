@@ -21,7 +21,6 @@ func evalPart1(input string) int {
 
 		if hashStr[:5] == "00000" {
 			running = false
-			fmt.Printf("Key:  %s\nHash: %s\n", key, hashStr)
 		} else {
 			num++
 		}
@@ -39,7 +38,6 @@ func evalPart2(input string) int {
 
 		if hashStr[:6] == "000000" {
 			running = false
-			fmt.Printf("Key:  %s\nHash: %s\n", key, hashStr)
 		} else {
 			num++
 		}
@@ -51,8 +49,8 @@ func evalPart2(input string) int {
 func main() {
 	input := "yzbqklnj"
 
-	// result1 := evalPart1(input)
-	// fmt.Println("Part 1: ", result1)
+	result1 := evalPart1(input)
+	fmt.Println("Part 1: ", result1)
 
 	result2 := evalPart2(input)
 	fmt.Println("Part 2: ", result2)
