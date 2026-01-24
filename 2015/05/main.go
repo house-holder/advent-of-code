@@ -7,6 +7,14 @@ import (
 	"strings"
 )
 
+func evalPart2(lines []string) int {
+	count := 0
+
+	// core logic
+
+	return count
+}
+
 func evalPart1(lines []string) int {
 	count := 0
 	badStrings := []string{"ab", "cd", "pq", "xy"}
